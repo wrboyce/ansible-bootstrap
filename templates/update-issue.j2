@@ -1,0 +1,10 @@
+#!/bin/sh
+# {{ ansible_managed }}
+
+# Ignore loopback
+if [ "$IFACE" = lo ]; then
+	exit 0
+fi
+
+# update /etc/issue with hostname / ip
+echo "$(hostname -f) / $(hostname -I)" > /etc/issue

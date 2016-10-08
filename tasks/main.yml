@@ -1,0 +1,30 @@
+---
+- name: ensure ansible is installed
+  apt: pkg=ansible state=installed
+  when: ansible_system == 'Linux'
+
+- name: create ansible user
+  user: name=ansible system=yes
+  when: ansible_system == 'Linux'
+
+- name: copy authorized_keys
+  authorized_key: user=ansible key="{{ ansible_deploy_key }}"
+  when: ansible_system == 'Linux'
+
+- name: configure sudo access
+  lineinfile: dest=/etc/sudoers state=present regexp='^ansible ALL' line='ansible ALL=(ALL) NOPASSWD:ALL' validate='visudo -cf %s'
+  when: ansible_system == 'Linux'
+
+- name: configure /etc/issue updates
+  template: src=update-issue.j2 dest=/etc/network/if-up.d/update-issue mode=755
+  register: update_issue_installed
+  when: ansible_system == 'Linux'
+
+- name: update /etc/issue
+  command: /etc/network/if-up.d/update-issue
+  when: update_issue_installed.changed
+  when: ansible_system == 'Linux'
+
+- name: configure cron job
+  cron: name="ansible bootstrap" special_time=hourly job="ansible-pull -U http://git.fbcnt.in/ansible.git -i $(hostname -f),"
+  when: ansible_system == 'Linux'
